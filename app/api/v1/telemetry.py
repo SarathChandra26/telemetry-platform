@@ -15,13 +15,11 @@ from app.services.telemetry import TelemetryService
 router = APIRouter(prefix="/telemetry", tags=["telemetry"])
 logger = structlog.get_logger(__name__)
 
-
 def _build_service(
     session: AsyncSession = Depends(get_db_session),
     redis: Redis = Depends(get_redis),
 ) -> TelemetryService:
     return get_telemetry_service(session, redis)
-
 
 @router.post(
     "",
@@ -40,4 +38,4 @@ async def ingest_telemetry(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Rate limit exceeded for fleet {exc.fleet_id}",
             headers={"Retry-After": "60"},
-        )
+        ) from exc
