@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Fleet Dashboard{% endblock %}
+
+{% block page_header %}
+<div class="tdp-page-header">
+  <div class="tdp-page-header-inner">
+    <div class="tdp-page-title-group">
+      <div class="tdp-breadcrumb">Fleet Intelligence</div>
+      <h1 class="tdp-page-title">Operations Dashboard</h1>
+    </div>
+    <div class="tdp-page-actions">
+      <div class="tdp-fleet-selector">
+        <label class="tdp-input-label">FLEET ID</label>
+        <div class="tdp-fleet-id-display" id="fleet-id-display">
+          <i class="bi bi-hdd-network"></i>
+          <input
+            type="text"
+            id="fleet-id-input"
+            class="tdp-fleet-id-input"
+            value="{{ fleet_id }}"
+            placeholder="Enter fleet UUID"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+      <div class="tdp-vehicle-selector">
+        <label class="tdp-input-label">VEHICLE ID</label>
+        <div class="tdp-fleet-id-display">
+          <i class="bi bi-truck"></i>
+          <input
+            type="text"
+            id="vehicle-id-input"
+            class="tdp-fleet-id-input"
+            placeholder="Enter vehicle UUID (for speed chart)"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+      <button class="tdp-btn-refresh" id="btn-refresh">
+        <i class="bi bi-arrow-clockwise" id="refresh-icon"></i>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- &#9472;&#9472; Last Updated Banner &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+<div class="tdp-update-bar">
+  <i class="bi bi-clock-history"></i>
+  <span>Last updated: <strong id="last-updated">&#8212;</strong></span>
+  <span class="tdp-update-bar-sep">&#183;</span>
+  <span id="data-status" class="tdp-data-status">Loading...</span>
+</div>
+
+<!-- &#9472;&#9472; KPI Cards Row &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+<div class="tdp-kpi-grid" id="kpi-grid">
+
+  <div class="tdp-kpi-card" id="kpi-total-vehicles">
+    <div class="tdp-kpi-icon-wrap tdp-kpi-blue">
+      <i class="bi bi-collection"></i>
+    </div>
+    <div class="tdp-kpi-body">
+      <div class="tdp-kpi-label">Total Vehicles</div>
+      <div class="tdp-kpi-value" id="kpi-v-total">&#8212;</div>
+      <div class="tdp-kpi-sub">fleet registered</div>
+    </div>
+  </div>
+
+  <div class="tdp-kpi-card" id="kpi-active-vehicles">
+    <div class="tdp-kpi-icon-wrap tdp-kpi-green">
+      <i class="bi bi-activity"></i>
+    </div>
+    <div class="tdp-kpi-body">
+      <div class="tdp-kpi-label">Active (Last Hour)</div>
+      <div class="tdp-kpi-value" id="kpi-v-active">&#8212;</div>
+      <div class="tdp-kpi-sub">reporting events</div>
+    </div>
+  </div>
+
+  <div class="tdp-kpi-card" id="kpi-avg-speed">
+    <div class="tdp-kpi-icon-wrap tdp-kpi-amber">
+      <i class="bi bi-speedometer"></i>
+    </div>
+    <div class="tdp-kpi-body">
+      <div class="tdp-kpi-label">Avg Speed (Last Hour)</div>
+      <div class="tdp-kpi-value" id="kpi-v-speed">&#8212;</div>
+      <div class="tdp-kpi-sub">km/h fleet average</div>
+    </div>
+  </div>
+
+  <div class="tdp-kpi-card" id="kpi-low-battery">
+    <div class="tdp-kpi-icon-wrap tdp-kpi-red">
+      <i class="bi bi-battery-half"></i>
+    </div>
+    <div class="tdp-kpi-body">
+      <div class="tdp-kpi-label">Low Battery Alerts</div>
+      <div class="tdp-kpi-value" id="kpi-v-battery">&#8212;</div>
+      <div class="tdp-kpi-sub">vehicles below 20%</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- &#9472;&#9472; Charts Row &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+<div class="tdp-charts-row">
+
+  <!-- Scenario Summary Doughnut -->
+  <div class="tdp-chart-card tdp-chart-narrow">
+    <div class="tdp-chart-header">
+      <div class="tdp-chart-title-group">
+        <span class="tdp-chart-eyebrow">Scenario Intelligence</span>
+        <h3 class="tdp-chart-title">Event Distribution</h3>
+      </div>
+      <div class="tdp-date-range-group">
+        <input type="date" id="scenario-from" class="tdp-date-input" />
+        <span class="tdp-date-sep">&rarr;</span>
+        <input type="date" id="scenario-to" class="tdp-date-input" />
+      </div>
+    </div>
+    <div class="tdp-chart-body tdp-doughnut-body">
+      <div class="tdp-doughnut-wrap">
+        <canvas id="scenarioDoughnut"></canvas>
+        <div class="tdp-doughnut-center" id="doughnut-total">
+          <span class="tdp-doughnut-num">&#8212;</span>
+          <span class="tdp-doughnut-lbl">total</span>
+        </div>
+      </div>
+      <div class="tdp-legend" id="scenario-legend">
+        <div class="tdp-legend-loading">
+          <div class="tdp-spinner"></div>
+          <span>Loading scenarios&#8230;</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hourly Speed Line Chart -->
+  <div class="tdp-chart-card tdp-chart-wide">
+    <div class="tdp-chart-header">
+      <div class="tdp-chart-title-group">
+        <span class="tdp-chart-eyebrow">Vehicle Analytics</span>
+        <h3 class="tdp-chart-title">Hourly Speed Profile</h3>
+      </div>
+      <div class="tdp-hours-toggle" id="hours-toggle">
+        <button class="tdp-toggle-btn" data-hours="6">6H</button>
+        <button class="tdp-toggle-btn active" data-hours="24">24H</button>
+        <button class="tdp-toggle-btn" data-hours="72">3D</button>
+        <button class="tdp-toggle-btn" data-hours="168">7D</button>
+      </div>
+    </div>
+    <div class="tdp-chart-body">
+      <div id="speed-chart-placeholder" class="tdp-chart-placeholder">
+        <i class="bi bi-truck tdp-placeholder-icon"></i>
+        <p>Enter a Vehicle ID above and click <strong>Refresh</strong> to load the speed profile.</p>
+      </div>
+      <canvas id="speedLineChart" style="display:none;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- &#9472;&#9472; Scenario Events Table &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+<div class="tdp-section-card">
+  <div class="tdp-section-header">
+    <div class="tdp-chart-title-group">
+      <span class="tdp-chart-eyebrow">Event Log</span>
+      <h3 class="tdp-chart-title">Scenario Events</h3>
+    </div>
+    <div class="tdp-section-controls">
+      <select id="scenario-filter" class="tdp-select">
+        <option value="hard_brake">Hard Brake</option>
+        <option value="rapid_acceleration">Rapid Acceleration</option>
+        <option value="over_speeding">Over Speeding</option>
+        <option value="low_battery">Low Battery</option>
+        <option value="risky_weather_event">Risky Weather Event</option>
+      </select>
+      <button class="tdp-btn-sm" id="btn-load-events">
+        <i class="bi bi-search"></i> Query Events
+      </button>
+    </div>
+  </div>
+
+  <div id="events-table-wrap">
+    <div class="tdp-table-placeholder">
+      <i class="bi bi-table tdp-placeholder-icon"></i>
+      <p>Select a scenario and click <strong>Query Events</strong> to load the event log.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

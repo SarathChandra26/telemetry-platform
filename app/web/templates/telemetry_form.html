@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Ingest Telemetry Event{% endblock %}
+
+{% block page_header %}
+<div class="tdp-page-header">
+  <div class="tdp-page-header-inner">
+    <div class="tdp-page-title-group">
+      <div class="tdp-breadcrumb">API Interface</div>
+      <h1 class="tdp-page-title">Ingest Telemetry Event</h1>
+    </div>
+    <div class="tdp-page-actions">
+      <a href="/" class="tdp-btn-ghost">
+        <i class="bi bi-arrow-left"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="tdp-ingest-layout">
+
+  <!-- &#9472;&#9472; Left: Form &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+  <div class="tdp-form-card">
+    <div class="tdp-form-card-header">
+      <i class="bi bi-broadcast-pin"></i>
+      <div>
+        <h2 class="tdp-form-title">Event Payload</h2>
+        <p class="tdp-form-subtitle">POST /api/v1/telemetry</p>
+      </div>
+      <button type="button" class="tdp-btn-ghost tdp-btn-sm ms-auto" id="btn-populate-sample">
+        <i class="bi bi-lightning-charge"></i> Sample Data
+      </button>
+    </div>
+
+    <form id="telemetry-form" novalidate>
+
+      <!-- IDs Row -->
+      <div class="tdp-field-group">
+        <div class="tdp-field-section-label">
+          <i class="bi bi-diagram-3"></i> Identifiers
+        </div>
+        <div class="tdp-field-row">
+          <div class="tdp-field">
+            <label for="f-fleet-id" class="tdp-label">Fleet ID <span class="tdp-required">*</span></label>
+            <input type="text" id="f-fleet-id" name="fleet_id"
+              class="tdp-input"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              spellcheck="false" required />
+            <div class="tdp-field-hint">UUID v4</div>
+          </div>
+          <div class="tdp-field">
+            <label for="f-vehicle-id" class="tdp-label">Vehicle ID <span class="tdp-required">*</span></label>
+            <input type="text" id="f-vehicle-id" name="vehicle_id"
+              class="tdp-input"
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              spellcheck="false" required />
+            <div class="tdp-field-hint">UUID v4</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Row -->
+      <div class="tdp-field-group">
+        <div class="tdp-field-section-label">
+          <i class="bi bi-geo-alt"></i> Position & Motion
+        </div>
+        <div class="tdp-field-row tdp-field-row-3">
+          <div class="tdp-field">
+            <label for="f-speed" class="tdp-label">Speed <span class="tdp-required">*</span></label>
+            <div class="tdp-input-unit-wrap">
+              <input type="number" id="f-speed" name="speed"
+                class="tdp-input"
+                placeholder="0.00" min="0" max="500" step="0.01" required />
+              <span class="tdp-input-unit">km/h</span>
+            </div>
+          </div>
+          <div class="tdp-field">
+            <label for="f-lat" class="tdp-label">Latitude <span class="tdp-required">*</span></label>
+            <input type="number" id="f-lat" name="latitude"
+              class="tdp-input"
+              placeholder="35.6762" min="-90" max="90" step="0.000001" required />
+          </div>
+          <div class="tdp-field">
+            <label for="f-lon" class="tdp-label">Longitude <span class="tdp-required">*</span></label>
+            <input type="number" id="f-lon" name="longitude"
+              class="tdp-input"
+              placeholder="139.6503" min="-180" max="180" step="0.000001" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Enrichment Row -->
+      <div class="tdp-field-group">
+        <div class="tdp-field-section-label">
+          <i class="bi bi-sliders"></i> Enrichment Fields
+        </div>
+        <div class="tdp-field-row tdp-field-row-3">
+          <div class="tdp-field">
+            <label for="f-battery" class="tdp-label">Battery Level <span class="tdp-required">*</span></label>
+            <div class="tdp-input-unit-wrap">
+              <input type="number" id="f-battery" name="battery_level"
+                class="tdp-input"
+                placeholder="85" min="0" max="100" step="1" required />
+              <span class="tdp-input-unit">%</span>
+            </div>
+            <div id="battery-bar-wrap" class="tdp-battery-bar-wrap">
+              <div class="tdp-battery-bar" id="battery-bar"></div>
+            </div>
+          </div>
+          <div class="tdp-field">
+            <label for="f-acceleration" class="tdp-label">Acceleration</label>
+            <div class="tdp-input-unit-wrap">
+              <input type="number" id="f-acceleration" name="acceleration"
+                class="tdp-input"
+                placeholder="0.000" step="0.001" />
+              <span class="tdp-input-unit">m/s&#178;</span>
+            </div>
+            <div class="tdp-field-hint">Negative = braking &mdash; e.g. -8.2</div>
+          </div>
+          <div class="tdp-field">
+            <label for="f-weather" class="tdp-label">Weather</label>
+            <select id="f-weather" name="weather" class="tdp-input tdp-select-field">
+              <option value="">&#8212; none &#8212;</option>
+              <option value="clear">Clear</option>
+              <option value="rain">Rain</option>
+              <option value="snow">Snow</option>
+              <option value="fog">Fog</option>
+              <option value="wind">Wind</option>
+            </select>
+          </div>
+        </div>
+        <div class="tdp-field-row tdp-field-row-2-narrow">
+          <div class="tdp-field">
+            <label for="f-engine-on" class="tdp-label">Engine Status</label>
+            <select id="f-engine-on" name="engine_on" class="tdp-input tdp-select-field">
+              <option value="">&#8212; not specified &#8212;</option>
+              <option value="true">Engine ON</option>
+              <option value="false">Engine OFF</option>
+            </select>
+          </div>
+          <div class="tdp-field">
+            <label for="f-recorded-at" class="tdp-label">Recorded At</label>
+            <input type="datetime-local" id="f-recorded-at" name="recorded_at"
+              class="tdp-input" />
+            <div class="tdp-field-hint">Defaults to now (UTC) if blank</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scenario Preview -->
+      <div class="tdp-scenario-preview" id="scenario-preview">
+        <div class="tdp-scenario-preview-label">
+          <i class="bi bi-cpu"></i> Predicted Scenarios
+        </div>
+        <div class="tdp-scenario-tags" id="scenario-tags">
+          <span class="tdp-scenario-tag-empty">Fill in acceleration, speed, battery &amp; weather to preview</span>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="tdp-form-actions">
+        <button type="button" class="tdp-btn-ghost" id="btn-reset-form">
+          <i class="bi bi-x-circle"></i> Reset
+        </button>
+        <button type="submit" class="tdp-btn-primary" id="btn-submit">
+          <i class="bi bi-send"></i>
+          <span id="btn-submit-text">Submit Event</span>
+          <span id="btn-submit-spinner" class="tdp-btn-spinner" style="display:none;">
+            <span class="spinner-border spinner-border-sm"></span>
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- &#9472;&#9472; Right: Response Panel &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472; -->
+  <div class="tdp-response-panel">
+
+    <!-- Response Card -->
+    <div class="tdp-response-card" id="response-card">
+      <div class="tdp-response-card-header">
+        <i class="bi bi-terminal"></i>
+        <span>API Response</span>
+        <button class="tdp-btn-copy ms-auto" id="btn-copy-response" style="display:none;" title="Copy JSON">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <div class="tdp-response-body" id="response-body">
+        <div class="tdp-response-idle">
+          <i class="bi bi-hourglass tdp-response-idle-icon"></i>
+          <p>Awaiting submission&#8230;</p>
+          <p class="tdp-response-idle-sub">The API response will appear here.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario Tags Result -->
+    <div class="tdp-detected-card" id="detected-card" style="display:none;">
+      <div class="tdp-detected-header">
+        <i class="bi bi-shield-exclamation"></i>
+        <span>Detected Scenarios</span>
+      </div>
+      <div class="tdp-detected-tags" id="detected-tags"></div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="tdp-info-card">
+      <div class="tdp-info-card-header">
+        <i class="bi bi-info-circle"></i> Scenario Trigger Rules
+      </div>
+      <ul class="tdp-rule-list">
+        <li><span class="tdp-rule-tag tdp-tag-red">hard_brake</span> acceleration &lt; &minus;7 m/s&sup2;</li>
+        <li><span class="tdp-rule-tag tdp-tag-amber">rapid_acceleration</span> acceleration &gt; +7 m/s&sup2;</li>
+        <li><span class="tdp-rule-tag tdp-tag-blue">over_speeding</span> speed &gt; 100 km/h</li>
+        <li><span class="tdp-rule-tag tdp-tag-orange">low_battery</span> battery &lt; 15%</li>
+        <li><span class="tdp-rule-tag tdp-tag-purple">risky_weather_event</span> hard brake + rain/snow/fog</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/telemetry.js"></script>
+{% endblock %}
